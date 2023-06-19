@@ -1,6 +1,6 @@
 # Vizier
 
-minimalist html documentation tool for C code.
+minimalist html documentation tool for C code. currently a work in progress
 
 ## Project Structure
 
