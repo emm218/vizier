@@ -138,18 +138,10 @@ struct vec *
 insert(struct vec *v, FILE *f)
 {
 	if (v->len == v->capacity) {
-		if (v->capacity == 0) {
-			v = realloc(v, sizeof(*v) + 4 * sizeof(f));
-			if (v == NULL)
-				goto fail;
-			v->capacity = 4;
-		} else {
-			v = realloc(v,
-			    sizeof(*v) + v->capacity * 2 * sizeof(f));
-			if (v == NULL)
-				goto fail;
-			v->capacity *= 2;
-		}
+		v = realloc(v, sizeof(*v) + v->capacity * 2 * sizeof(f));
+		if (v == NULL)
+			goto fail;
+		v->capacity *= 2;
 	}
 
 	v->buf[v->len] = f;
