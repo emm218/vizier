@@ -18,7 +18,7 @@ enum sym_kind {
 };
 
 struct sym_info {
-	char *name;
+	const char *name;
 	enum sym_kind kind;
 	CXSourceLocation location;
 	int has_impl;
@@ -32,6 +32,7 @@ int is_md(const char *const);
 void usage(void);
 
 struct sym_info *head = NULL;
+const char *argv0 = NULL;
 
 int
 main(int argc, char **argv)
@@ -44,8 +45,10 @@ main(int argc, char **argv)
 	CXIndex idx;
 	CXTranslationUnit tu;
 
+	argv0 = argv[0];
+
 	if (argc < 2) {
-		fprintf(stderr, "%s: no input files provided\n", argv[0]);
+		fprintf(stderr, "%s: no input files provided\n", argv0);
 		usage();
 		return 1;
 	}
@@ -65,7 +68,7 @@ main(int argc, char **argv)
 
 	md_files = malloc(sizeof(struct vec) + sizeof(char *) * DEFAULT_CAP);
 	if (md_files == NULL) {
-		perror(argv[0]);
+		perror(argv0);
 		return 1;
 	}
 	md_files->capacity = 1;
@@ -77,12 +80,12 @@ main(int argc, char **argv)
 		if (is_md(*cur)) {
 			if ((tmp = fopen(*cur, "r")) == NULL) {
 				fprintf(stderr, "%s: failed to open '%s' %s\n",
-				    argv[0], *cur, strerror(errno));
+				    argv0, *cur, strerror(errno));
 				return 1;
 			}
 			md_files = insert(md_files, tmp);
 			if (md_files == NULL) {
-				perror(argv[0]);
+				perror(argv0);
 				return 1;
 			}
 			continue;
@@ -92,7 +95,7 @@ main(int argc, char **argv)
 		    CXTranslationUnit_SkipFunctionBodies);
 
 		if (tu == NULL) {
-			fprintf(stderr, "%s: failed to parse '%s'\n", argv[0],
+			fprintf(stderr, "%s: failed to parse '%s'\n", argv0,
 			    *cur);
 			return 1;
 		}
@@ -104,6 +107,8 @@ main(int argc, char **argv)
 	cur = files;
 	free(md_files);
 	while (head) {
+		printf("%s\t%s\n", head->kind ? "TYPE" : "FUNCTION",
+		    head->name);
 		free(head);
 		head = head->next;
 	}
@@ -117,6 +122,8 @@ visitor(CXCursor c, CXCursor p, CXClientData d)
 {
 	CXSourceLocation loc;
 	enum CXCursorKind kind;
+	CXString kind_str;
+	struct sym_info *cur;
 
 	(void)p;
 	(void)d;
@@ -130,6 +137,26 @@ visitor(CXCursor c, CXCursor p, CXClientData d)
 
 	if (kind == CXCursor_TypeRef)
 		return CXChildVisit_Continue;
+
+	kind_str = clang_getCursorKindSpelling(kind);
+
+	printf("%s\n", clang_getCString(kind_str));
+	clang_disposeString(kind_str);
+
+	if (kind != CXCursor_FunctionDecl && kind != CXCursor_StructDecl)
+		return CXChildVisit_Continue;
+
+	cur = malloc(sizeof(struct sym_info));
+	if (cur == NULL) {
+		perror(argv0);
+		exit(1);
+	}
+
+	cur->location = loc;
+	cur->kind = kind == CXCursor_FunctionDecl ? FUNCTION : TYPE;
+	cur->name = clang_getCString(clang_getCursorSpelling(c));
+	cur->next = head;
+	head = cur;
 
 	return CXChildVisit_Recurse;
 }
