@@ -6,7 +6,7 @@ LDLIBS+=-lclang
 
 SRC:=$(wildcard *.c)
 
-OBJ:=$(SRC:.c=.o) MurmurHash3.o
+OBJ:=$(SRC:.c=.o)
 
 debug: CFLAGS+=-g
 debug: LDFLAGS+=-g
