@@ -44,6 +44,12 @@ main(int argc, char **argv)
 	CXIndex idx;
 	CXTranslationUnit tu;
 
+	if (argc < 2) {
+		fprintf(stderr, "%s: no input files provided\n", argv[0]);
+		usage();
+		return 1;
+	}
+
 	if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
 		usage();
 		return 0;
@@ -168,5 +174,7 @@ is_md(const char *const str)
 void
 usage(void)
 {
-	printf("");
+	fprintf(stderr,
+	    "usage: vizier [options] file...\n\n"
+	    "Any options will be passed to libclang\n");
 }
